@@ -1,0 +1,12 @@
+{
+  "name": "agent-notify",
+  "version": "1.0.0",
+  "description": "Sound + desktop toast when the agent finishes a turn, asks a question, or needs a permission click. Configured in ~/.agent-notify/config.json.",
+  "author": {
+    "name": "Andrew Blokhin",
+    "email": "ablokhin@ostridelabs.com"
+  },
+  "homepage": "https://github.com/Quo0/ai-toolkit/tree/main/plugins/agent-notify",
+  "license": "MIT",
+  "keywords": ["notifications", "hooks", "sound", "toast"]
+}

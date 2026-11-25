@@ -1,0 +1,7 @@
+{
+  "name": "agent-notify",
+  "version": "1.0.0",
+  "description": "Sound + desktop toast when Codex finishes a turn, asks a question, or needs an approval. Configured in ~/.agent-notify/config.json.",
+  "keywords": ["notifications", "hooks", "sound", "toast"],
+  "hooks": "./hooks/codex-hooks.json"
+}

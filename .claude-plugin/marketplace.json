@@ -1,0 +1,18 @@
+{
+  "name": "quo0-ai-toolkit",
+  "description": "Andrew's plugins for Claude Code and Codex",
+  "owner": {
+    "name": "Andrew Blokhin",
+    "email": "ablokhin@ostridelabs.com",
+    "url": "https://github.com/Quo0"
+  },
+  "plugins": [
+    {
+      "name": "agent-notify",
+      "source": "./plugins/agent-notify",
+      "description": "Sound + desktop toast when an AI agent (Claude Code, Codex) finishes a turn, asks a question, or needs a permission click. Per-agent, per-event sounds and rules in one config file.",
+      "category": "productivity",
+      "author": { "name": "Andrew Blokhin" }
+    }
+  ]
+}
