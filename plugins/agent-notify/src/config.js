@@ -78,8 +78,11 @@ function merge(...layers) {
   return out;
 }
 
+// Sound files are spawned without a shell, so `~` must be expanded here.
+const expandHome = (p) => String(p).replace(/^~(?=$|[\\/])/, os.homedir());
+
 function normPath(p, platform) {
-  let s = String(p).replace(/^~(?=$|[\\/])/, os.homedir()).replace(/\\/g, '/').replace(/\/+$/, '');
+  let s = expandHome(p).replace(/\\/g, '/').replace(/\/+$/, '');
   return platform === 'win32' ? s.toLowerCase() : s;
 }
 
@@ -122,7 +125,7 @@ function resolve(cfg, { agent, kind, projectDir, now = new Date(), turnStartedAt
   if (layer.enabled === false || ev.enabled === false) return null;
   if (ev.minTurnSeconds && turnStartedAt && now.getTime() - turnStartedAt < ev.minTurnSeconds * 1000) return null;
 
-  let sound = layer.sound !== false && typeof ev.sound === 'string' && ev.sound ? ev.sound : null;
+  let sound = layer.sound !== false && typeof ev.sound === 'string' && ev.sound ? expandHome(ev.sound) : null;
   if (sound && inQuietHours(layer.quietHours, now)) sound = null;
   const toast = layer.toast !== false && ev.toast !== false;
 

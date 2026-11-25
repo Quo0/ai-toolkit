@@ -21,9 +21,15 @@ codex plugin add agent-notify@quo0-ai-toolkit
 ```
 
 Or in the Codex app: Plugins → add marketplace `Quo0/ai-toolkit` → install
-`agent-notify`. Then **trust its hooks** (`/hooks` in the CLI, Settings → Hooks
-in the app) — Codex never runs plugin hooks until you approve them, and asks
-again after every plugin update.
+`agent-notify`.
+
+**Codex: approve the hooks, or nothing plays.** Codex never runs plugin hooks
+until you approve them, and asks again after every plugin update:
+
+- app: Plugins → `agent-notify` → **Hooks** → ⚙ → approve all 4 (or Settings → Hooks)
+- CLI: `/hooks`
+
+Claude Code needs no approval: installing the plugin is enough.
 
 Start a new session after installing; hooks resolve at session start.
 
@@ -59,9 +65,36 @@ hook, so those stay Claude-only.
 
 ## Config
 
-One file for all agents: `~/.agent-notify/config.json` (override the path with
-`AGENT_NOTIFY_CONFIG`). No file = built-in defaults. `AGENT_NOTIFY=off` in env
-disables everything. Full example: [`config.example.json`](config.example.json).
+### Where it lives
+
+One global file serves every agent:
+
+| OS | Path |
+| --- | --- |
+| Windows | `C:\Users\<you>\.agent-notify\config.json` |
+| macOS | `/Users/<you>/.agent-notify/config.json` |
+| Linux | `/home/<you>/.agent-notify/config.json` |
+
+- **Installing the plugin doesn't create it.** With no file, the built-in
+  defaults apply. To customize, copy [`config.example.json`](config.example.json)
+  there and edit it.
+- **Edits apply on the next event.** The file is read on every hook call, so no
+  restart is needed.
+- **Other location:** set `AGENT_NOTIFY_CONFIG` to the file's path.
+- **Kill switch:** set `AGENT_NOTIFY=off` in the environment to disable
+  everything.
+- **Invalid JSON** is ignored, so the defaults apply. The reason goes to the
+  hook's stderr.
+
+Don't edit the plugin's own files. Updates overwrite them, and Codex asks you to
+re-approve the hooks after any change. For reference, they're stored here:
+
+| | Claude Code | Codex |
+| --- | --- | --- |
+| plugin files | `~/.claude/plugins/cache/quo0-ai-toolkit/agent-notify/<version>/` | `~/.codex/plugins/cache/quo0-ai-toolkit/agent-notify/<version>/` |
+| enabled in | `~/.claude/settings.json` → `enabledPlugins` | `~/.codex/config.toml` → `[plugins."agent-notify@quo0-ai-toolkit"]` |
+
+### Format
 
 ```json
 {
@@ -99,10 +132,17 @@ Built-in sounds:
 
 ## Notes
 
-- Windows plays sounds with `Media.SoundPlayer`: **`.wav` only**. The script
-  blocks for the clip length, because a detached hidden PowerShell silently
-  drops audio on Win11. All hooks are `async` in both agents, so the agent never
-  waits on the sound.
+- Sound formats depend on the player each OS uses. Any path works,
+  `~/…` included.
+
+  | OS | player | formats |
+  | --- | --- | --- |
+  | Windows | `Media.SoundPlayer` | **`.wav` only** (uncompressed PCM) |
+  | macOS | `afplay` | `.wav`, `.aiff`, `.mp3`, `.m4a`/`.aac`, `.caf` (no `.ogg`) |
+  | Linux | `paplay` (PulseAudio / PipeWire) | `.wav`, `.ogg`/`.oga`, `.flac`, `.aiff`; `.mp3` needs libsndfile ≥ 1.1 |
+- On Windows the script blocks for the clip length, because a detached hidden
+  PowerShell silently drops audio on Win11. All hooks are `async` in both
+  agents, so the agent never waits on the sound.
 - Claude's `Notification` is matched to `idle_prompt|agent_needs_input` only:
   its other types either repeat `PermissionRequest` / `Elicitation`
   (`permission_prompt` arrives ~6 s after the dialog) or aren't worth a sound

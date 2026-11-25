@@ -27,6 +27,21 @@ The agent:
 Send the same message again later to pick up anything new. The full catalog,
 with the exact commands, is in [INSTALL.md](INSTALL.md#catalog).
 
+## Codex: approve plugin hooks
+
+Codex doesn't run a plugin's hooks until you approve them. Until then a plugin
+like `agent-notify` is installed but silent. Approve once after installing, and
+again after every plugin update:
+
+- **Codex app:** Plugins → the plugin (e.g. `agent-notify`) → **Hooks** →
+  ⚙ → approve each hook. Or go to Settings → Hooks.
+- **Codex CLI:** `/hooks` → approve the plugin's hooks.
+
+Then restart the session.
+
+**Claude Code doesn't need this step.** Installing a plugin is the approval:
+its hooks run from the next session on.
+
 ## Manual install
 
 Plugins, Claude Code:
@@ -36,8 +51,7 @@ claude plugin marketplace add Quo0/ai-toolkit
 claude plugin install agent-notify@quo0-ai-toolkit
 ```
 
-Plugins, Codex (then approve the plugin's hooks via `/hooks`, or Settings →
-Hooks in the app):
+Plugins, Codex (then [approve the plugin's hooks](#codex-approve-plugin-hooks)):
 
 ```bash
 codex plugin marketplace add Quo0/ai-toolkit

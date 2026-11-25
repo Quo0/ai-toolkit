@@ -26,6 +26,11 @@ test('merge order: defaults < agents[agent] < projects[longest prefix]', () => {
   assert.equal(resolve(cfg, { ...base, projectDir: 'D:\\projects\\application' }).sound, 'projects.wav');
 });
 
+test('~ in a sound path expands to the home dir', () => {
+  const cfg = { defaults: { events: { stop: { sound: '~/sounds/done.mp3' } } } };
+  assert.equal(resolve(cfg, base).sound, require('os').homedir() + '/sounds/done.mp3');
+});
+
 test('enabled / sound / toast switches', () => {
   assert.equal(resolve({ agents: { codex: { enabled: false } } }, base), null);
   assert.equal(resolve({ defaults: { events: { stop: { enabled: false } } } }, base), null);

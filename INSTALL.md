@@ -103,9 +103,22 @@ agent. Rules:
 
 Re-run the Step 2 checks for what you installed. Then report a short table
 (item × agent → installed / failed + reason), followed by each item's "After"
-notes. Always end with a restart instruction (skills, plugins and hooks load
-at session start), concrete for the user's app: close and reopen the desktop
-app, run "Developer: Reload Window" in VS Code, or exit and relaunch the CLI.
+notes.
+
+If you installed a plugin into Codex, tell the user to approve its hooks.
+Otherwise the plugin stays silent: Codex runs no plugin hooks until the user
+approves them, and you must not do it for them.
+
+- Codex app: Plugins → `<plugin>` → **Hooks** → ⚙ → approve each hook (or
+  Settings → Hooks).
+- Codex CLI: `/hooks`.
+- Approval is needed again after every plugin update.
+
+Claude Code has no such step: installing the plugin is the approval.
+
+Always end with a restart instruction (skills, plugins and hooks load at
+session start), concrete for the user's app: close and reopen the desktop app,
+run "Developer: Reload Window" in VS Code, or exit and relaunch the CLI.
 Mention that saying "install from https://github.com/Quo0/ai-toolkit" again
 later picks up anything new.
 
@@ -190,7 +203,7 @@ agents read it from this repo.
   user to add marketplace `Quo0/ai-toolkit` in the Codex app (Plugins) and
   install `agent-notify` there.
 - **After:**
-  - Codex: the user must approve the plugin's hooks (`/hooks` in the CLI, Settings → Hooks in the app). Codex never runs plugin hooks until they do.
+  - Codex: approve its 4 hooks (Stop, PermissionRequest, PreToolUse, UserPromptSubmit) as described in [Step 5](#step-5--verify-and-report). Without approval there is no sound in Codex.
   - Optional: custom sounds and rules. Offer to create `~/.agent-notify/config.json` from [`config.example.json`](plugins/agent-notify/config.example.json); its README documents each setting.
 
 ### Local skills
