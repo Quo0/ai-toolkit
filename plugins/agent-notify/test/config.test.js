@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { resolve, inQuietHours } = require('../src/config');
+const { resolve, inQuietHours, pickSound } = require('../src/config');
 
 const at = (hh, mm) => new Date(2026, 0, 1, hh, mm);
 const base = { agent: 'codex', kind: 'stop', projectDir: 'D:\\projects\\app', now: at(12, 0), platform: 'win32' };
@@ -29,6 +29,43 @@ test('merge order: defaults < agents[agent] < projects[longest prefix]', () => {
 test('~ in a sound path expands to the home dir', () => {
   const cfg = { defaults: { events: { stop: { sound: '~/sounds/done.mp3' } } } };
   assert.equal(resolve(cfg, base).sound, require('os').homedir() + '/sounds/done.mp3');
+});
+
+test('sound arrays: picker gets expanded list, order (event > layer > undefined) and agent-kind key', () => {
+  const calls = [];
+  const pick = (files, order, key) => (calls.push({ files, order, key }), files[1]);
+  const cfg = {
+    defaults: { soundOrder: 'cycle', events: { stop: { sound: ['a.wav', '~/b.wav', '', 7] } } },
+    agents: { claude: { events: { attention: { sound: ['c.wav', 'd.wav'], soundOrder: 'random' } } } },
+  };
+  assert.equal(resolve(cfg, { ...base, pick }).sound, require('os').homedir() + '/b.wav');
+  assert.deepEqual(calls[0], { files: ['a.wav', require('os').homedir() + '/b.wav'], order: 'cycle', key: 'codex-stop' });
+  resolve(cfg, { ...base, agent: 'claude', kind: 'attention', pick });
+  assert.deepEqual(calls[1], { files: ['c.wav', 'd.wav'], order: 'random', key: 'claude-attention' });
+});
+
+test('muted events never reach the picker (cycle must not advance)', () => {
+  const pick = () => assert.fail('picker called');
+  const sounds = { events: { stop: { sound: ['a.wav', 'b.wav'] } } };
+  assert.equal(resolve({ defaults: { ...sounds, quietHours: '00:00-23:59' } }, { ...base, pick }), null);
+  assert.equal(resolve({ defaults: { ...sounds, sound: false } }, { ...base, pick }), null);
+  assert.equal(resolve({ defaults: { events: { stop: { sound: [] } } } }, { ...base, pick }), null);
+});
+
+test('pickSound: single file, random, cycle with persisted position', () => {
+  const fs = require('fs');
+  const stateDir = fs.mkdtempSync(require('path').join(require('os').tmpdir(), 'agent-notify-test-'));
+  try {
+    assert.equal(pickSound(['only.wav'], 'cycle', 'k', { stateDir }), 'only.wav');
+    assert.equal(pickSound([], 'random', 'k', { stateDir }), null);
+    assert.equal(pickSound(['a', 'b', 'c'], 'random', 'k', { random: () => 0.99 }), 'c');
+    assert.equal(pickSound(['a', 'b', 'c'], undefined, 'k', { random: () => 0 }), 'a');
+    const seq = [1, 2, 3, 4].map(() => pickSound(['a', 'b', 'c'], 'cycle', 'k', { stateDir }));
+    assert.deepEqual(seq, ['a', 'b', 'c', 'a']);
+    assert.equal(pickSound(['a', 'b', 'c'], 'cycle', 'other', { stateDir }), 'a'); // separate key, separate position
+  } finally {
+    fs.rmSync(stateDir, { recursive: true, force: true });
+  }
 });
 
 test('enabled / sound / toast switches', () => {

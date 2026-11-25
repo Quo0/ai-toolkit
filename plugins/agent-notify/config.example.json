@@ -7,7 +7,14 @@
         "toast": false,
         "minTurnSeconds": 20
       },
-      "attention": { "sound": "C:/Windows/Media/Ring02.wav" },
+      "attention": {
+        "sound": [
+          "C:/Windows/Media/Ring02.wav",
+          "C:/Windows/Media/Ring05.wav",
+          "C:/Windows/Media/Ring08.wav"
+        ],
+        "soundOrder": "cycle"
+      },
       "permission": { "sound": "C:/Windows/Media/Alarm04.wav" }
     }
   },
@@ -19,7 +26,12 @@
     },
     "codex": {
       "events": {
-        "stop": { "sound": "C:/Windows/Media/chimes.wav" },
+        "stop": {
+          "sound": [
+            "C:/Windows/Media/chimes.wav",
+            "C:/Windows/Media/notify.wav"
+          ]
+        },
         "permission": { "toast": false }
       }
     }

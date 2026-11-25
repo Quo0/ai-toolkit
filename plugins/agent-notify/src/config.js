@@ -8,8 +8,9 @@
 //     "log": false
 //   }
 //
-// A layer: { enabled, sound, toast, quietHours, events: { stop|attention|permission:
-//            { enabled, sound: "<file>" | false, toast, minTurnSeconds } } }
+// A layer: { enabled, sound, toast, quietHours, soundOrder, events: { stop|attention|permission:
+//            { enabled, sound: "<file>" | ["<file>", ...] | false, soundOrder: "random" | "cycle",
+//              toast, minTurnSeconds } } }
 // Merge order, later wins: built-in → defaults → agents[agent] → longest matching projects[] prefix.
 
 const fs = require('fs');
@@ -113,7 +114,7 @@ function inQuietHours(spec, now) {
 }
 
 // → { sound: "<file>" | null, toast: bool }, or null for silence.
-function resolve(cfg, { agent, kind, projectDir, now = new Date(), turnStartedAt, platform = process.platform }) {
+function resolve(cfg, { agent, kind, projectDir, now = new Date(), turnStartedAt, platform = process.platform, pick = pickSound }) {
   const layer = merge(
     builtin(platform),
     cfg.defaults,
@@ -125,17 +126,43 @@ function resolve(cfg, { agent, kind, projectDir, now = new Date(), turnStartedAt
   if (layer.enabled === false || ev.enabled === false) return null;
   if (ev.minTurnSeconds && turnStartedAt && now.getTime() - turnStartedAt < ev.minTurnSeconds * 1000) return null;
 
-  let sound = layer.sound !== false && typeof ev.sound === 'string' && ev.sound ? expandHome(ev.sound) : null;
-  if (sound && inQuietHours(layer.quietHours, now)) sound = null;
+  // sound: one file or an array of files; soundOrder picks from an array.
+  const files = layer.sound === false ? [] : [].concat(ev.sound).filter((s) => typeof s === 'string' && s).map(expandHome);
+  const muted = files.length === 0 || inQuietHours(layer.quietHours, now);
+  // Pick only when it will play, so a muted event doesn't advance a cycle.
+  const sound = muted ? null : pick(files, ev.soundOrder || layer.soundOrder, `${agent}-${kind}`);
   const toast = layer.toast !== false && ev.toast !== false;
 
   return sound || toast ? { sound, toast } : null;
 }
 
+// Per-machine runtime state: turn start times, cycle positions. Lost on reboot, which is fine.
+const STATE_DIR = path.join(os.tmpdir(), 'agent-notify');
+
+// "random" (default) or "cycle" through the list. Cycle position is kept per key (agent-kind).
+function pickSound(files, order, key, { random = Math.random, stateDir = STATE_DIR } = {}) {
+  if (files.length < 2) return files[0] || null;
+  if (order !== 'cycle') return files[Math.floor(random() * files.length)];
+  const file = path.join(stateDir, `cycle-${key}`);
+  let i = 0;
+  try {
+    i = Number(fs.readFileSync(file, 'utf8')) || 0;
+  } catch {
+    // first pick
+  }
+  try {
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.writeFileSync(file, String((i + 1) % files.length));
+  } catch {
+    // no state = cycle restarts, still plays a sound
+  }
+  return files[i % files.length];
+}
+
 // Turn start, written on UserPromptSubmit, read for minTurnSeconds.
 function turnFile(agent, sessionId) {
   if (!sessionId) return null;
-  return path.join(os.tmpdir(), 'agent-notify', `${agent}-${String(sessionId).replace(/[^\w-]/g, '_')}`);
+  return path.join(STATE_DIR, `${agent}-${String(sessionId).replace(/[^\w-]/g, '_')}`);
 }
 
 function markTurnStart(agent, sessionId, now = Date.now()) {
@@ -165,4 +192,4 @@ function logEvent(agent, event) {
   }
 }
 
-module.exports = { load, resolve, merge, inQuietHours, projectLayer, markTurnStart, turnStart, logEvent };
+module.exports = { load, resolve, merge, inQuietHours, projectLayer, pickSound, markTurnStart, turnStart, logEvent };

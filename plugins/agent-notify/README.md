@@ -114,10 +114,17 @@ dir. A layer can set:
 | `enabled` | `false` silences everything in this layer's scope |
 | `sound` / `toast` | `false` turns that channel off for every event |
 | `quietHours` | `"23:00-08:00"` (may wrap midnight) — sound muted, toast still shown |
+| `soundOrder` | how to pick from a sound array: `"random"` or `"cycle"` (in order, wraps around). **Default: `"random"`.** Applies to every event below, which can override it |
 | `events.<kind>.enabled` | `false` silences that event |
-| `events.<kind>.sound` | file to play, or `false` |
+| `events.<kind>.sound` | file to play, an array of files (one is picked per event), or `false` |
+| `events.<kind>.soundOrder` | `"random"` / `"cycle"` for this event only. Unset: the layer's `soundOrder`; if none is set anywhere, `"random"` |
 | `events.<kind>.toast` | `true` / `false` (default: on, except `stop`) |
 | `events.<kind>.minTurnSeconds` | stay silent if the turn took less (meant for `stop`) |
+
+Arrays replace, never merge: an `agents.codex` array fully overrides the one in
+`defaults`. Each agent + kind has its own cycle position, kept in
+`<temp>/agent-notify/cycle-<agent>-<kind>`. That position resets on reboot. A
+muted event (quiet hours, `sound: false`) doesn't advance the cycle.
 
 Built-in sounds:
 
